@@ -18,7 +18,6 @@ import kotlin.math.min
 abstract class BaseEncoder : EncoderCallback {
 
     private val tag = "BaseEncoder"
-    private val bufferInfo = MediaCodec.BufferInfo()
     private var handlerThread: HandlerThread? = null
     var queue: BlockingQueue<Frame> = ArrayBlockingQueue(80)
     var codec: MediaCodec? = null
@@ -119,28 +118,6 @@ abstract class BaseEncoder : EncoderCallback {
 
     protected abstract fun chooseEncoder(mime: String?): MediaCodecInfo?
 
-    @get:Throws(IllegalStateException::class)
-    protected val dataFromEncoder: Unit
-        get() {
-            if (isBufferMode) {
-                val inBufferIndex = codec!!.dequeueInputBuffer(0)
-                if (inBufferIndex >= 0) {
-                    inputAvailable(codec!!, inBufferIndex)
-                }
-            }
-            while (isRunning) {
-                val outBufferIndex = codec!!.dequeueOutputBuffer(bufferInfo, 0)
-                if (outBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    val mediaFormat = codec!!.outputFormat
-                    formatChanged(codec!!, mediaFormat)
-                } else if (outBufferIndex >= 0) {
-                    outputAvailable(codec!!, outBufferIndex, bufferInfo)
-                } else {
-                    break
-                }
-            }
-        }
-
     @get:Throws(InterruptedException::class)
     protected abstract val inputFrame: Frame?
 
@@ -186,11 +163,6 @@ abstract class BaseEncoder : EncoderCallback {
         checkBuffer(byteBuffer, bufferInfo) //校验buffer
         sendBuffer(byteBuffer, bufferInfo) //发送buffer
         mediaCodec.releaseOutputBuffer(outBufferIndex, false) //释放
-    }
-
-    @JvmName("setForce1")
-    fun setForce(force: CodecUtil.Force) {
-        this.force = force
     }
 
     @Throws(IllegalStateException::class)

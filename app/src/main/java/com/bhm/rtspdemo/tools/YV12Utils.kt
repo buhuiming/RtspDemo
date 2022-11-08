@@ -1,3 +1,5 @@
+@file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS", "unused")
+
 package com.bhm.rtspdemo.tools
 
 object YV12Utils {

@@ -23,20 +23,17 @@ open class VideoEncoder : BaseEncoder() {
     private var oldVps: ByteBuffer? = null
 
     //surface to buffer encoder
-    var inputSurface: Surface? = null
-    var width = 800
-        private set
-    var height = 600
-        private set
-    var fps = 30
-    var bitRate = 1200 * 1024 //in kbps
-        private set
-    var rotation = 90
+    private var inputSurface: Surface? = null
+    private var width = 800
+    private var height = 600
+    private var fps = 30
+    private var bitRate = 1200 * 1024 //in kbps
+    private var rotation = 90
     private var iFrameInterval = 2
 
     //for disable video
     private val fpsLimiter = FpsLimiter()
-    var type: String = CodecUtil.H264_MIME
+    private var type: String = CodecUtil.H264_MIME
     private var formatVideoEncoder: FormatVideoEncoder? = FormatVideoEncoder.YUV420Dynamical
     private var avcProfile = -1
     private var avcProfileLevel = -1
@@ -197,20 +194,20 @@ open class VideoEncoder : BaseEncoder() {
         return null
     }
 
-    fun setVideoBitrateOnFly(bitrate: Int) {
-        if (isRunning) {
-            bitRate = bitrate
-            val bundle = Bundle()
-            bundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitrate)
-            try {
-                codec!!.setParameters(bundle)
-            } catch (e: IllegalStateException) {
-                Timber.e(e, "encoder need be running")
-            }
-        }
-    }
+//    fun setVideoBitrateOnFly(bitrate: Int) {
+//        if (isRunning) {
+//            bitRate = bitrate
+//            val bundle = Bundle()
+//            bundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitrate)
+//            try {
+//                codec!!.setParameters(bundle)
+//            } catch (e: IllegalStateException) {
+//                Timber.e(e, "encoder need be running")
+//            }
+//        }
+//    }
 
-    fun requestKeyframe() {
+    private fun requestKeyframe() {
         if (isRunning) {
             if (spsPpsSetted) {
                 val bundle = Bundle()
@@ -261,21 +258,20 @@ open class VideoEncoder : BaseEncoder() {
      * choose the video encoder by mime.
      */
     override fun chooseEncoder(mime: String?): MediaCodecInfo? {
-        val mediaCodecInfoList: List<MediaCodecInfo>
-        mediaCodecInfoList = if (force === CodecUtil.Force.HARDWARE) {
+        val mediaCodecInfoList: List<MediaCodecInfo> = if (force === CodecUtil.Force.HARDWARE) {
             CodecUtil.getAllHardwareEncoders(mime, true)
         } else if (force === CodecUtil.Force.SOFTWARE) {
             CodecUtil.getAllSoftwareEncoders(mime, true)
         } else {
             //Priority: hardware CBR > hardware > software CBR > software
-            CodecUtil.getAllEncoders(mime, true, true)
+            CodecUtil.getAllEncoders(mime, hardwarePriority = true, cbrPriority = true)
         }
         Timber.i(mediaCodecInfoList.size.toString() + " encoders found")
         for (mci in mediaCodecInfoList) {
-            Timber.i("Encoder " + mci.getName())
+            Timber.i("Encoder " + mci.name)
             val codecCapabilities: MediaCodecInfo.CodecCapabilities = mci.getCapabilitiesForType(mime)
             for (color in codecCapabilities.colorFormats) {
-                Timber.i("Color supported: " + color)
+                Timber.i("Color supported: $color")
                 if (formatVideoEncoder === FormatVideoEncoder.SURFACE) {
                     if (color == FormatVideoEncoder.SURFACE.formatCodec) return mci
                 } else {
