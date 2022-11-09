@@ -67,8 +67,6 @@ class MainActivity : BaseVBActivity<BaseViewModel, ActivityMainBinding>(), Conne
             viewBinding.btnStart.text = "Start"
             return
         }
-        viewBinding.etUrl.isEnabled = false
-        viewBinding.btnStart.text = "Stop"
         if (videoEncoder.prepareVideoEncoder(
                 Constants.WIDTH,
                 Constants.HEIGHT,
@@ -81,9 +79,12 @@ class MainActivity : BaseVBActivity<BaseViewModel, ActivityMainBinding>(), Conne
                 -1,
             )
         ) {
+            viewBinding.etUrl.isEnabled = false
+            viewBinding.btnStart.text = "Stop"
             streaming = true
             videoEncoder.start()
             rtspClient?.setOnlyVideo(true)
+            rtspClient?.setCheckServerAlive(true)
             rtspClient?.connect(viewBinding.etUrl.text.toString(), true)
             CoroutineScope(Dispatchers.IO).launch {
                 while (index < 332 && streaming) {
